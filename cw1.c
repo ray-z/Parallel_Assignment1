@@ -10,16 +10,15 @@
 
 #define MAX_RAND 100   /* maximum random number */
 
-int isEnd = 0;
-int precision;
 void print2DArr(int *arr, int len);
 void copyArr(int *dst, int *src, int len);
-void averaging(int *arr, int *temp, int len);
+int averaging(int *arr, int *temp, int len, int precision);
 
 int main(int argc, char *argv[])
 {
-    int arrLen, numThreads;
+    int arrLen, precision, numThreads;
     int *randArr, *tempArr;
+    int isEnd = 0;
 
     /* get command-line arguments */
     arrLen = (argv[1]) ? strtol(argv[1], NULL, 10) : 0;
@@ -42,7 +41,9 @@ int main(int argc, char *argv[])
     printf("Result:\n");
     while(!isEnd)
     {
-        averaging(randArr, tempArr, arrLen);
+        if(averaging(randArr, tempArr, arrLen, precision) == 
+                (arrLen-2)*(arrLen-2))
+            isEnd = 1;
     }
 
     /*
@@ -65,11 +66,12 @@ int main(int argc, char *argv[])
 
 /*
  * averaging: replacing a value with the average of its four neighbours
+ * return: number of items whith value < precision
  */
-void averaging(int *arr, int *temp, int len)
+int averaging(int *arr, int *temp, int len, int max)
 {
-    copyArr(temp, arr, len*len);
     int counter = 0;
+    copyArr(temp, arr, len*len);
     for(int r = 1; r < len-1; r++)
     {
         for(int c = 1; c < len-1; c++)
@@ -77,12 +79,12 @@ void averaging(int *arr, int *temp, int len)
             int result = (temp[r*len + c - 1] + temp[r*len + c + 1] + 
                     temp[(r-1)*len + c] + temp[(r+1)*len +c]) / 4;
             arr[r*len + c] = result;
-            if(result < precision)  counter++;
+            if(result < max)  counter++;
             /*printf("result=%d, precision=%d, counter=%d\n", 
                     result, precision, counter);*/
         }
     }
-    if(counter == (len-2)*(len-2)) isEnd = 1;
+    return counter;
 }
 
 /*
