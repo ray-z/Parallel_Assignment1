@@ -18,7 +18,6 @@ int main(int argc, char *argv[])
 {
     int arrLen, precision, numThreads;
     int *randArr, *tempArr;
-    int isEnd = 0;
 
     /* get command-line arguments */
     arrLen = (argv[1]) ? strtol(argv[1], NULL, 10) : 0;
@@ -39,12 +38,18 @@ int main(int argc, char *argv[])
     /* do averaging */
     printf("Averaging...\n");
     printf("Result:\n");
+    while(averaging(randArr, tempArr, arrLen, precision))
+        ;
+    print2DArr(randArr, arrLen);
+
+    /*
     while(!isEnd)
     {
         if(averaging(randArr, tempArr, arrLen, precision) == 
                 (arrLen-2)*(arrLen-2))
             isEnd = 1;
     }
+    */
 
     /*
     averaging(randArr, tempArr, arrLen);
@@ -54,8 +59,8 @@ int main(int argc, char *argv[])
     averaging(randArr, tempArr, arrLen);
     print2DArr(randArr, arrLen);
     averaging(randArr, tempArr, arrLen);
-    */
     print2DArr(randArr, arrLen);
+    */
 
 
 
@@ -76,10 +81,9 @@ int averaging(int *arr, int *temp, int len, int max)
     {
         for(int c = 1; c < len-1; c++)
         {
-            int result = (temp[r*len + c - 1] + temp[r*len + c + 1] + 
-                    temp[(r-1)*len + c] + temp[(r+1)*len +c]) / 4;
-            arr[r*len + c] = result;
-            if(result < max)  counter++;
+            int avg = (temp[r*len + c - 1] + temp[r*len + c + 1] + 
+                    temp[(r-1)*len + c] + temp[(r+1)*len +c]) / 4; 
+            if((arr[r*len + c] = avg) >= max)  counter++;
             /*printf("result=%d, precision=%d, counter=%d\n", 
                     result, precision, counter);*/
         }
