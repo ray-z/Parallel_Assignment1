@@ -12,7 +12,7 @@
 
 void print2DArr(int *arr, int len);
 void copyArr(int *dst, int *src, int len);
-int averaging(int *arr, int *temp, int len, int precision);
+int averaging(int *arr, int *temp, int row, int col, int precision);
 
 int main(int argc, char *argv[])
 {
@@ -32,35 +32,19 @@ int main(int argc, char *argv[])
     {
         randArr[i] = rand() % MAX_RAND;
     }
+    copyArr(tempArr, randArr, arrLen*arrLen);
+
     //copyArr(tempArr, randArr, arrLen*arrLen);
     print2DArr(randArr, arrLen);
     
     /* do averaging */
     printf("Averaging...\n");
     printf("Result:\n");
-    while(averaging(randArr, tempArr, arrLen, precision))
-        ;
-    print2DArr(randArr, arrLen);
-
-    /*
-    while(!isEnd)
+    while(averaging(randArr, tempArr, arrLen, arrLen, precision))
     {
-        if(averaging(randArr, tempArr, arrLen, precision) == 
-                (arrLen-2)*(arrLen-2))
-            isEnd = 1;
+        copyArr(tempArr, randArr, arrLen*arrLen);
     }
-    */
-
-    /*
-    averaging(randArr, tempArr, arrLen);
     print2DArr(randArr, arrLen);
-    averaging(randArr, tempArr, arrLen);
-    print2DArr(randArr, arrLen);
-    averaging(randArr, tempArr, arrLen);
-    print2DArr(randArr, arrLen);
-    averaging(randArr, tempArr, arrLen);
-    print2DArr(randArr, arrLen);
-    */
 
 
 
@@ -71,19 +55,18 @@ int main(int argc, char *argv[])
 
 /*
  * averaging: replacing a value with the average of its four neighbours
- * return: number of items whith value < precision
+ * return: number of items whose value >= max after averaging
  */
-int averaging(int *arr, int *temp, int len, int max)
+int averaging(int *arr, int *temp, int row, int col, int max)
 {
     int counter = 0;
-    copyArr(temp, arr, len*len);
-    for(int r = 1; r < len-1; r++)
+    for(int r = 1; r < row-1; r++)
     {
-        for(int c = 1; c < len-1; c++)
+        for(int c = 1; c < col-1; c++)
         {
-            int avg = (temp[r*len + c - 1] + temp[r*len + c + 1] + 
-                    temp[(r-1)*len + c] + temp[(r+1)*len +c]) / 4; 
-            if((arr[r*len + c] = avg) >= max)  counter++;
+            int avg = (temp[r*col + c - 1] + temp[r*col + c + 1] + 
+                    temp[(r-1)*col + c] + temp[(r+1)*col +c]) / 4; 
+            if((arr[r*col + c] = avg) >= max)  counter++;
             /*printf("result=%d, precision=%d, counter=%d\n", 
                     result, precision, counter);*/
         }
