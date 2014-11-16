@@ -18,7 +18,8 @@ int *randArr;
 
 void print2DArr(int *arr, int len);
 void copyArr(int *dst, int *src, int len);
-void averaging(int row, int col);
+void averaging(int thrNum);
+void averaging_noP(int row, int col);
 
 int main(int argc, char *argv[])
 {
@@ -44,39 +45,55 @@ int main(int argc, char *argv[])
     }
     print2DArr(randArr, arrLen);
 
+    averaging(0);
+    averaging(1);
+    averaging(2);
+    averaging(3);
 
+
+//    /* init barrier */
+//    if(pthread_barrier_init(&barr, NULL, numThreads))
+//    {
+//        printf("Could not create a barrier.\n");
+//        return -1;
+//    }
+//
 //    /* create threads */
 //    pthread_t threads[numThreads];
 //    for(int i = 0; i < numThreads; ++i)
 //    {
-//        if(pthread_create(&threads[i], NULL, &averaging,
+//        if(pthread_create(&threads[i], NULL, (void*(*)(void*))averaging, &i))
+//        {
+//            printf("Could not create thread: %d\n", i);
+//            return -1;
+//        }
+//
 //    }
-//    /* init barrier */
-//    if(pthread_barrier_init(&barr, NULL, numThreads))
+//
+//    for(int i = 0; i< numThreads; ++i)
 //    {
-//        printf("Could not init a barrier\n");
+//        if(pthread_join[i], NULL)
+//        {
+//            printf("Could not join thread: %d\n", i);
+//            return -1;
+//        }
 //    }
-//
-//
-//    //for(;;)
-//    //{
-//        
-//   // }
+
 
 
 
 
 
     
-    /* do averaging */
-    printf("Averaging...\n");
-    printf("Result:\n");
-    while(!isEnd)
-    {
-        averaging(arrLen, arrLen);
-        
-    }
-    print2DArr(randArr, arrLen);
+//    /* do averaging */
+//    printf("Averaging...\n");
+//    printf("Result:\n");
+//    while(!isEnd)
+//    {
+//        averaging_noP(arrLen, arrLen);
+//        
+//    }
+//    print2DArr(randArr, arrLen);
 
 
     free(randArr);
@@ -86,14 +103,27 @@ int main(int argc, char *argv[])
 /*
  * averaging: replacing a value with the average of its four neighbours
  */
-void averaging(int row, int col)
+void averaging(int thrNum)
 {
-    int temp[row*col];
-    copyArr(temp, randArr, row*col);
+    int temp[arrLen*arrLen];
+    int row_s, row_e;
+    int col = arrLen;
+    int n = (arrLen-2)/numThreads;
+    if(thrNum == numThreads - 1)
+    {
+        row_s = thrNum * n + 1;
+        row_e = arrLen - 2;
+    }
+    else
+    {
+        row_s = thrNum * n + 1;
+        row_e = row_s + n - 1;
+    }
 
-    isEnd = 1;
+    copyArr(temp, randArr, arrLen*arrLen);
+    printf("thread: %d operates row %d to %d.\n", thrNum, row_s, row_e);
 
-    for(int r = 1; r < row-1; r++)
+    for(int r = row_s; r <= row_e; r++)
     {
         for(int c = 1; c < col-1; c++)
         {
@@ -102,6 +132,16 @@ void averaging(int row, int col)
             if((randArr[r*col + c] = avg) >= precision)  isEnd = 0;
         }
     }
+
+    print2DArr(randArr, col);
+
+
+
+
+    /*
+    isEnd = 1;
+
+    */
 }
 
 /*
@@ -132,6 +172,4 @@ void print2DArr(int *arr, int len)
     }
 
 }
-
-
 
