@@ -12,11 +12,13 @@
 #define MAX_RAND 100   /* maximum random number */
 
 int isEnd = 0;
-pthread_barrier_t barrier;
+int arrLen, precision, numThreads;
+int *randArr;
+//pthread_barrier_t barr;
 
 void print2DArr(int *arr, int len);
 void copyArr(int *dst, int *src, int len);
-void averaging(int *arr, int row, int col, int precision);
+void averaging(int row, int col);
 
 int main(int argc, char *argv[])
 {
@@ -27,31 +29,39 @@ int main(int argc, char *argv[])
      * precision: max value of the random range, so the loop will run once only
      * number of threads: 1
      */
-    int arrLen, precision, numThreads;
+    //int arrLen, precision, numThreads;
     arrLen = (argv[1]) ? strtol(argv[1], NULL, 10) : 10;
     precision = (argv[2]) ? strtol(argv[2], NULL, 10) : MAX_RAND;
     numThreads = (argv[3]) ? strtol(argv[3], NULL, 10) : 1;
 
 
     /* init array */
-    int randArr[arrLen*arrLen];
-    //int tempArr[arrLen*arrLen];
+    randArr = (int *)malloc(arrLen*arrLen*sizeof(int));
     printf("Random generating a 2D array with dimension = %d:\n", arrLen);
     for(int i = 0; i < arrLen*arrLen; i++)
     {
         randArr[i] = rand() % MAX_RAND;
     }
-    //copyArr(tempArr, randArr, arrLen*arrLen);
     print2DArr(randArr, arrLen);
 
 
-    /* create threads */
-    pthread_t threads[numThreads];
-
-    //for(;;)
-    //{
-        
-   // }
+//    /* create threads */
+//    pthread_t threads[numThreads];
+//    for(int i = 0; i < numThreads; ++i)
+//    {
+//        if(pthread_create(&threads[i], NULL, &averaging,
+//    }
+//    /* init barrier */
+//    if(pthread_barrier_init(&barr, NULL, numThreads))
+//    {
+//        printf("Could not init a barrier\n");
+//    }
+//
+//
+//    //for(;;)
+//    //{
+//        
+//   // }
 
 
 
@@ -63,24 +73,23 @@ int main(int argc, char *argv[])
     printf("Result:\n");
     while(!isEnd)
     {
-        averaging(randArr, arrLen, arrLen, precision);
+        averaging(arrLen, arrLen);
         
     }
     print2DArr(randArr, arrLen);
 
 
-
+    free(randArr);
     return 0;
 }
 
 /*
  * averaging: replacing a value with the average of its four neighbours
- * return: number of items whose value >= max after averaging
  */
-void averaging(int *arr, int row, int col, int max)
+void averaging(int row, int col)
 {
     int temp[row*col];
-    copyArr(temp, arr, row*col);
+    copyArr(temp, randArr, row*col);
 
     isEnd = 1;
 
@@ -90,7 +99,7 @@ void averaging(int *arr, int row, int col, int max)
         {
             int avg = (temp[r*col + c - 1] + temp[r*col + c + 1] + 
                     temp[(r-1)*col + c] + temp[(r+1)*col +c]) / 4; 
-            if((arr[r*col + c] = avg) >= max)  isEnd = 0;
+            if((randArr[r*col + c] = avg) >= precision)  isEnd = 0;
         }
     }
 }
