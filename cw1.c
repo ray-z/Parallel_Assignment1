@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 #define MAX_RAND 100   /* maximum random number */
 
@@ -16,31 +17,48 @@ int averaging(int *arr, int *temp, int row, int col, int precision);
 
 int main(int argc, char *argv[])
 {
+    /* get command-line arguments 
+     *
+     * default value:
+     * square array length: 10
+     * precision: max value of the random range, so the loop will run once only
+     * number of threads: 1
+     */
     int arrLen, precision, numThreads;
-    int *randArr, *tempArr;
+    arrLen = (argv[1]) ? strtol(argv[1], NULL, 10) : 10;
+    precision = (argv[2]) ? strtol(argv[2], NULL, 10) : MAX_RAND;
+    numThreads = (argv[3]) ? strtol(argv[3], NULL, 10) : 1;
 
-    /* get command-line arguments */
-    arrLen = (argv[1]) ? strtol(argv[1], NULL, 10) : 0;
-    precision = (argv[2]) ? strtol(argv[2], NULL, 10) : 0;
-    numThreads = (argv[3]) ? strtol(argv[3], NULL, 10) : 0;
 
-    /* init a array */
+    /* init array */
+    int randArr[arrLen*arrLen];
+    int tempArr[arrLen*arrLen];
     printf("Random generating a 2D array with dimension = %d:\n", arrLen);
-    randArr = (int *)malloc(arrLen*arrLen*sizeof(int)); 
-    tempArr = (int *)malloc(arrLen*arrLen*sizeof(int)); 
     for(int i = 0; i < arrLen*arrLen; i++)
     {
         randArr[i] = rand() % MAX_RAND;
     }
     copyArr(tempArr, randArr, arrLen*arrLen);
-
-    //copyArr(tempArr, randArr, arrLen*arrLen);
     print2DArr(randArr, arrLen);
+
+
+    /* create threads */
+    //pthread_t threads[numThreads];
+
+    //for(;;)
+    //{
+        
+   // }
+
+
+
+
+
     
     /* do averaging */
     printf("Averaging...\n");
     printf("Result:\n");
-    while(averaging(randArr, tempArr, arrLen, arrLen, precision))
+    while(!averaging(randArr, tempArr, arrLen, arrLen, precision))
     {
         copyArr(tempArr, randArr, arrLen*arrLen);
     }
@@ -48,8 +66,6 @@ int main(int argc, char *argv[])
 
 
 
-    free(randArr);
-    free(tempArr);
     return 0;
 }
 
@@ -59,19 +75,21 @@ int main(int argc, char *argv[])
  */
 int averaging(int *arr, int *temp, int row, int col, int max)
 {
-    int counter = 0;
+    //int counter = 0;
+    int isValid = 1;
     for(int r = 1; r < row-1; r++)
     {
         for(int c = 1; c < col-1; c++)
         {
             int avg = (temp[r*col + c - 1] + temp[r*col + c + 1] + 
                     temp[(r-1)*col + c] + temp[(r+1)*col +c]) / 4; 
-            if((arr[r*col + c] = avg) >= max)  counter++;
+            //if((arr[r*col + c] = avg) >= max)  counter++;
+            if((arr[r*col + c] = avg) >= max)  isValid = 0;
             /*printf("result=%d, precision=%d, counter=%d\n", 
                     result, precision, counter);*/
         }
     }
-    return counter;
+    return isValid;
 }
 
 /*
