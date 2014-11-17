@@ -51,74 +51,61 @@ int main(int argc, char *argv[])
     }
     print2DArr(randArr, arrLen);
 
-//    /* init mutex */
-//    if(pthread_mutex_init(&mutex, NULL))
-//    {
-//        printf("Unable to initialize a mutex\n");
-//        return -1;
-//    }
-//   
-//    /* init condition variable */
-//    if(pthread_cond_init (&cv, NULL))
-//    {
-//        printf("Unable to initialize a condition variable\n");
-//        return -1;
-//    }
-//     
-//
-//    /* init barrier */
-//    if(pthread_barrier_init(&barr, NULL, numThreads))
-//    {
-//        printf("Unable to initialize a barrier.\n");
-//        return -1;
-//    }
-//
-//    /* create threads */
-//    pthread_t threads[numThreads];
-//    for(int i = 0; i < numThreads; ++i)
-//    {
-//        int *inc = malloc(sizeof(i));
-//        *inc = i;
-//        if(pthread_create(&threads[i], NULL, (void*(*)(void*))averaging, inc))
-//        {
-//            printf("Could not create thread: %d\n", i);
-//            return -1;
-//        }
-//
-//    }
-//
-//    for(int i = 0; i< numThreads; ++i)
-//    {
-//        if(pthread_join(threads[i], NULL))
-//        {
-//            printf("Could not join thread: %d\n", i);
-//            return -1;
-//        }
-//    }
+    /* init mutex */
+    if(pthread_mutex_init(&mutex, NULL))
+    {
+        printf("Unable to initialize a mutex\n");
+        return -1;
+    }
+   
+    /* init condition variable */
+    if(pthread_cond_init (&cv, NULL))
+    {
+        printf("Unable to initialize a condition variable\n");
+        return -1;
+    }
+     
+
+    /* init barrier */
+    if(pthread_barrier_init(&barr, NULL, numThreads))
+    {
+        printf("Unable to initialize a barrier.\n");
+        return -1;
+    }
+
+    /* create threads */
+    pthread_t threads[numThreads];
+    for(int i = 0; i < numThreads; ++i)
+    {
+        int *inc = malloc(sizeof(i));
+        *inc = i;
+        if(pthread_create(&threads[i], NULL, (void*(*)(void*))averaging, inc))
+        {
+            printf("Could not create thread: %d\n", i);
+            return -1;
+        }
+
+    }
+
+    for(int i = 0; i< numThreads; ++i)
+    {
+        if(pthread_join(threads[i], NULL))
+        {
+            printf("Could not join thread: %d\n", i);
+            return -1;
+        }
+    }
 
 
-
-
-
-
-    
-//    /* do averaging */
-//    printf("Averaging...\n");
-//    printf("Result:\n");
-//    while(!isEnd)
-//    {
-//        averaging_noP(arrLen, arrLen);
-//        
-//    }
-//    print2DArr(randArr, arrLen);
-
+    printf("Result:\n");
+    print2DArr(randArr, arrLen);
 
     /* clean up */
-//    pthread_mutex_destroy(&mutex);
-//    pthread_cond_destroy(&cv);
-//    pthread_barrier_destroy(&barr);
-//    pthread_exit(NULL);
-//    free(randArr);
+    pthread_mutex_destroy(&mutex);
+    pthread_cond_destroy(&cv);
+    pthread_barrier_destroy(&barr);
+    pthread_exit(NULL);
+    free(randArr);
     return 0;
 }
 
@@ -194,18 +181,7 @@ void averaging(int *inc)
         }
     
         copyArr(temp, randArr, arrLen*arrLen);
-
-        
     }
-
-    
-    
-
-
-    /*
-    isEnd = 1;
-
-    */
 }
 
 /*
@@ -230,7 +206,7 @@ void print2DArr(double *arr, int len)
         {
             //randArr[r][c] = rand() % RMAX;
             //printf("%3d", randArr[r][c]);
-            printf("%3f", arr[r*len + c]);
+            printf("%3f\t", arr[r*len + c]);
         }
         printf("\n");
     }
