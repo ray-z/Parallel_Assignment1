@@ -14,7 +14,9 @@
 int isEnd = 0;
 int arrLen, precision, numThreads;
 int *randArr;
-//pthread_barrier_t barr;
+pthread_barrier_t barr;
+//pthread_mutex_t mutex;
+
 
 void print2DArr(int *arr, int len);
 void copyArr(int *dst, int *src, int len);
@@ -45,39 +47,34 @@ int main(int argc, char *argv[])
     }
     print2DArr(randArr, arrLen);
 
-    averaging(0);
-    averaging(1);
-    averaging(2);
-    averaging(3);
 
+    /* init barrier */
+    if(pthread_barrier_init(&barr, NULL, numThreads))
+    {
+        printf("Could not create a barrier.\n");
+        return -1;
+    }
 
-//    /* init barrier */
-//    if(pthread_barrier_init(&barr, NULL, numThreads))
-//    {
-//        printf("Could not create a barrier.\n");
-//        return -1;
-//    }
-//
-//    /* create threads */
-//    pthread_t threads[numThreads];
-//    for(int i = 0; i < numThreads; ++i)
-//    {
-//        if(pthread_create(&threads[i], NULL, (void*(*)(void*))averaging, &i))
-//        {
-//            printf("Could not create thread: %d\n", i);
-//            return -1;
-//        }
-//
-//    }
-//
-//    for(int i = 0; i< numThreads; ++i)
-//    {
-//        if(pthread_join[i], NULL)
-//        {
-//            printf("Could not join thread: %d\n", i);
-//            return -1;
-//        }
-//    }
+    /* create threads */
+    pthread_t threads[numThreads];
+    for(int i = 0; i < numThreads; ++i)
+    {
+        if(pthread_create(&threads[i], NULL, (void*(*)(void*))averaging, &i))
+        {
+            printf("Could not create thread: %d\n", i);
+            return -1;
+        }
+
+    }
+
+    for(int i = 0; i< numThreads; ++i)
+    {
+        if(pthread_join[i], NULL)
+        {
+            printf("Could not join thread: %d\n", i);
+            return -1;
+        }
+    }
 
 
 
@@ -121,19 +118,37 @@ void averaging(int thrNum)
     }
 
     copyArr(temp, randArr, arrLen*arrLen);
-    printf("thread: %d operates row %d to %d.\n", thrNum, row_s, row_e);
 
-    for(int r = row_s; r <= row_e; r++)
+    /* start loop to averaging */
+    while(!isEnd)
     {
-        for(int c = 1; c < col-1; c++)
+        for(int r = row_s; r <= row_e; r++)
         {
-            int avg = (temp[r*col + c - 1] + temp[r*col + c + 1] + 
-                    temp[(r-1)*col + c] + temp[(r+1)*col +c]) / 4; 
-            if((randArr[r*col + c] = avg) >= precision)  isEnd = 0;
+            for(int c = 1; c < col-1; c++)
+            {
+                int avg = (temp[r*col + c - 1] + temp[r*col + c + 1] + 
+                        temp[(r-1)*col + c] + temp[(r+1)*col +c]) / 4; 
+                if((randArr[r*col + c] = avg) >= precision)  isEnd = 0;
+            }
         }
+    
+        /* Synchronization point */
+        printf("Thread %d is waiting...", thrNum);
+        int rc = pthread_barrier_wait(&barr);
+        if(rc != 0 && rc != PTHREAD_BARRIER_SERIAL_THREAD)
+        {
+            printf("Could not wait on barrier.\n");
+            exit(-1);
+        }
+    
+        copyArr(temp, randArr, arrLen*arrLen);
+
+        
     }
 
-    print2DArr(randArr, col);
+    
+    
+
 
 
 
