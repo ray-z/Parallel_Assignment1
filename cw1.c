@@ -9,22 +9,22 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-#define MAX_RAND 100   /* maximum random number */
+#define RMAX 100.00   /* maximum random number */
 
 int isEnd = 0;
 int waitCount = 0;
 int roundCount = 0;
-int arrLen, precision, numThreads;
-int *randArr;
+int arrLen, numThreads;
+double precision;
+double *randArr;
 pthread_mutex_t mutex;
 pthread_cond_t cv;
 pthread_barrier_t barr;
 
-
-void print2DArr(int *arr, int len);
-void copyArr(int *dst, int *src, int len);
+double fRand(double max);
+void print2DArr(double *arr, int len);
+void copyArr(double *dst, double *src, int len);
 void averaging(int *inc);
-void averaging_noP(int row, int col);
 
 int main(int argc, char *argv[])
 {
@@ -37,63 +37,64 @@ int main(int argc, char *argv[])
      */
     //int arrLen, precision, numThreads;
     arrLen = (argv[1]) ? strtol(argv[1], NULL, 10) : 10;
-    precision = (argv[2]) ? strtol(argv[2], NULL, 10) : MAX_RAND;
+    precision = (argv[2]) ? atof(argv[2]) : RMAX;
+    printf("precision: %f\n", precision);
     numThreads = (argv[3]) ? strtol(argv[3], NULL, 10) : 1;
 
 
     /* init array */
-    randArr = (int *)malloc(arrLen*arrLen*sizeof(int));
+    randArr = (double *)malloc(arrLen*arrLen*sizeof(double));
     printf("Random generating a 2D array with dimension = %d:\n", arrLen);
     for(int i = 0; i < arrLen*arrLen; i++)
     {
-        randArr[i] = rand() % MAX_RAND;
+        randArr[i] = fRand(RMAX);
     }
     print2DArr(randArr, arrLen);
 
-    /* init mutex */
-    if(pthread_mutex_init(&mutex, NULL))
-    {
-        printf("Unable to initialize a mutex\n");
-        return -1;
-    }
-   
-    /* init condition variable */
-    if(pthread_cond_init (&cv, NULL))
-    {
-        printf("Unable to initialize a condition variable\n");
-        return -1;
-    }
-     
-
-    /* init barrier */
-    if(pthread_barrier_init(&barr, NULL, numThreads))
-    {
-        printf("Unable to initialize a barrier.\n");
-        return -1;
-    }
-
-    /* create threads */
-    pthread_t threads[numThreads];
-    for(int i = 0; i < numThreads; ++i)
-    {
-        int *inc = malloc(sizeof(i));
-        *inc = i;
-        if(pthread_create(&threads[i], NULL, (void*(*)(void*))averaging, inc))
-        {
-            printf("Could not create thread: %d\n", i);
-            return -1;
-        }
-
-    }
-
-    for(int i = 0; i< numThreads; ++i)
-    {
-        if(pthread_join(threads[i], NULL))
-        {
-            printf("Could not join thread: %d\n", i);
-            return -1;
-        }
-    }
+//    /* init mutex */
+//    if(pthread_mutex_init(&mutex, NULL))
+//    {
+//        printf("Unable to initialize a mutex\n");
+//        return -1;
+//    }
+//   
+//    /* init condition variable */
+//    if(pthread_cond_init (&cv, NULL))
+//    {
+//        printf("Unable to initialize a condition variable\n");
+//        return -1;
+//    }
+//     
+//
+//    /* init barrier */
+//    if(pthread_barrier_init(&barr, NULL, numThreads))
+//    {
+//        printf("Unable to initialize a barrier.\n");
+//        return -1;
+//    }
+//
+//    /* create threads */
+//    pthread_t threads[numThreads];
+//    for(int i = 0; i < numThreads; ++i)
+//    {
+//        int *inc = malloc(sizeof(i));
+//        *inc = i;
+//        if(pthread_create(&threads[i], NULL, (void*(*)(void*))averaging, inc))
+//        {
+//            printf("Could not create thread: %d\n", i);
+//            return -1;
+//        }
+//
+//    }
+//
+//    for(int i = 0; i< numThreads; ++i)
+//    {
+//        if(pthread_join(threads[i], NULL))
+//        {
+//            printf("Could not join thread: %d\n", i);
+//            return -1;
+//        }
+//    }
 
 
 
@@ -113,27 +114,21 @@ int main(int argc, char *argv[])
 
 
     /* clean up */
-    pthread_mutex_destroy(&mutex);
-    pthread_cond_destroy(&cv);
-    pthread_barrier_destroy(&barr);
-    pthread_exit(NULL);
-    free(randArr);
+//    pthread_mutex_destroy(&mutex);
+//    pthread_cond_destroy(&cv);
+//    pthread_barrier_destroy(&barr);
+//    pthread_exit(NULL);
+//    free(randArr);
     return 0;
 }
 
 /*
  * averaging: replacing a value with the average of its four neighbours
  */
-void averaging1(int *thrNum)
-{
-    printf("This is thread %d\n", *thrNum);
-    free(thrNum);
-}
-
 void averaging(int *inc)
 {
     int thrNum = *inc;
-    int temp[arrLen*arrLen];
+    double temp[arrLen*arrLen];
     int row_s, row_e;
     int col = arrLen;
     int n = (arrLen-2)/numThreads;
@@ -182,7 +177,7 @@ void averaging(int *inc)
         {
             for(int c = 1; c < col-1; c++)
             {
-                int avg = (temp[r*col + c - 1] + temp[r*col + c + 1] + 
+                double avg = (temp[r*col + c - 1] + temp[r*col + c + 1] + 
                         temp[(r-1)*col + c] + temp[(r+1)*col +c]) / 4; 
                 if((randArr[r*col + c] = avg) >= precision)  isEnd = 0;
             }
@@ -216,7 +211,7 @@ void averaging(int *inc)
 /*
  * copyArr: copy array from source to destination 
  */
-void copyArr(int *dst, int *src, int len)
+void copyArr(double *dst, double *src, int len)
 {
     while(len--)
     {
@@ -227,18 +222,27 @@ void copyArr(int *dst, int *src, int len)
 /*
  * print2DArr: print a readable 2D array
  */
-void print2DArr(int *arr, int len)
+void print2DArr(double *arr, int len)
 {
     for(int r = 0; r < len; r++)
     {
         for(int c = 0; c < len; c++)
         {
-            //randArr[r][c] = rand() % MAX_RAND;
+            //randArr[r][c] = rand() % RMAX;
             //printf("%3d", randArr[r][c]);
-            printf("%3d", arr[r*len + c]);
+            printf("%3f", arr[r*len + c]);
         }
         printf("\n");
     }
 
+}
+
+/*
+ * fRand: return random double with 2 decimal places
+ */
+double fRand(double max)
+{
+    double f = (double)rand() / RAND_MAX;
+    return f * max;
 }
 
