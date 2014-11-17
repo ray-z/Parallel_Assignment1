@@ -5,6 +5,7 @@
  * Date: 07 Nov 2014
  */
 
+/* This version does not contain any parallel */
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
