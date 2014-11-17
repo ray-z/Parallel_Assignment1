@@ -131,6 +131,7 @@ void averaging(int *inc)
     /* start loop to averaging */
     while(!isEnd)
     {
+        printf("Thread %d is averaging row %d to %d\n", thrNum, row_s, row_e);
         for(int r = row_s; r <= row_e; r++)
         {
             for(int c = 1; c < col-1; c++)
@@ -143,7 +144,7 @@ void averaging(int *inc)
     
         print2DArr(randArr,col);
         /* Synchronization point */
-        printf("Thread %d is waiting...", thrNum);
+        printf("Thread %d is waiting...\n", thrNum);
         int rc = pthread_barrier_wait(&barr);
         if(rc != 0 && rc != PTHREAD_BARRIER_SERIAL_THREAD)
         {
