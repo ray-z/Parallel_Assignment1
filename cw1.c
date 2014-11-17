@@ -11,9 +11,20 @@
 
 #define MAX_RAND 100   /* maximum random number */
 
+int isEnd = 0;
+int waitCount = 0;
+int roundCount = 0;
+int arrLen, precision, numThreads;
+int *randArr;
+pthread_mutex_t mutex;
+pthread_cond_t cv;
+pthread_barrier_t barr;
+
+
 void print2DArr(int *arr, int len);
 void copyArr(int *dst, int *src, int len);
-int averaging(int *arr, int *temp, int row, int col, int precision);
+void averaging(int *inc);
+void averaging_noP(int row, int col);
 
 int main(int argc, char *argv[])
 {
@@ -24,72 +35,182 @@ int main(int argc, char *argv[])
      * precision: max value of the random range, so the loop will run once only
      * number of threads: 1
      */
-    int arrLen, precision, numThreads;
+    //int arrLen, precision, numThreads;
     arrLen = (argv[1]) ? strtol(argv[1], NULL, 10) : 10;
     precision = (argv[2]) ? strtol(argv[2], NULL, 10) : MAX_RAND;
     numThreads = (argv[3]) ? strtol(argv[3], NULL, 10) : 1;
 
 
     /* init array */
-    int randArr[arrLen*arrLen];
-    int tempArr[arrLen*arrLen];
+    randArr = (int *)malloc(arrLen*arrLen*sizeof(int));
     printf("Random generating a 2D array with dimension = %d:\n", arrLen);
     for(int i = 0; i < arrLen*arrLen; i++)
     {
         randArr[i] = rand() % MAX_RAND;
     }
-    copyArr(tempArr, randArr, arrLen*arrLen);
     print2DArr(randArr, arrLen);
 
+    /* init mutex */
+    if(pthread_mutex_init(&mutex, NULL))
+    {
+        printf("Unable to initialize a mutex\n");
+        return -1;
+    }
+   
+    /* init condition variable */
+    if(pthread_cond_init (&cv, NULL))
+    {
+        printf("Unable to initialize a condition variable\n");
+        return -1;
+    }
+     
+
+    /* init barrier */
+    if(pthread_barrier_init(&barr, NULL, numThreads))
+    {
+        printf("Unable to initialize a barrier.\n");
+        return -1;
+    }
 
     /* create threads */
-    //pthread_t threads[numThreads];
+    pthread_t threads[numThreads];
+    for(int i = 0; i < numThreads; ++i)
+    {
+        int *inc = malloc(sizeof(i));
+        *inc = i;
+        if(pthread_create(&threads[i], NULL, (void*(*)(void*))averaging, inc))
+        {
+            printf("Could not create thread: %d\n", i);
+            return -1;
+        }
 
-    //for(;;)
-    //{
-        
-   // }
+    }
+
+    for(int i = 0; i< numThreads; ++i)
+    {
+        if(pthread_join(threads[i], NULL))
+        {
+            printf("Could not join thread: %d\n", i);
+            return -1;
+        }
+    }
+
 
 
 
 
 
     
-    /* do averaging */
-    printf("Averaging...\n");
-    printf("Result:\n");
-    while(!averaging(randArr, tempArr, arrLen, arrLen, precision))
-    {
-        copyArr(tempArr, randArr, arrLen*arrLen);
-    }
-    print2DArr(randArr, arrLen);
+//    /* do averaging */
+//    printf("Averaging...\n");
+//    printf("Result:\n");
+//    while(!isEnd)
+//    {
+//        averaging_noP(arrLen, arrLen);
+//        
+//    }
+//    print2DArr(randArr, arrLen);
 
 
-
+    /* clean up */
+    pthread_mutex_destroy(&mutex);
+    pthread_cond_destroy(&cv);
+    pthread_barrier_destroy(&barr);
+    pthread_exit(NULL);
+    free(randArr);
     return 0;
 }
 
 /*
  * averaging: replacing a value with the average of its four neighbours
- * return: number of items whose value >= max after averaging
  */
-int averaging(int *arr, int *temp, int row, int col, int max)
+void averaging1(int *thrNum)
 {
-    //int counter = 0;
-    int isValid = 1;
-    for(int r = 1; r < row-1; r++)
+    printf("This is thread %d\n", *thrNum);
+    free(thrNum);
+}
+
+void averaging(int *inc)
+{
+    int thrNum = *inc;
+    int temp[arrLen*arrLen];
+    int row_s, row_e;
+    int col = arrLen;
+    int n = (arrLen-2)/numThreads;
+    if(thrNum == numThreads - 1)
     {
-        for(int c = 1; c < col-1; c++)
-        {
-            int avg = (temp[r*col + c - 1] + temp[r*col + c + 1] + 
-                    temp[(r-1)*col + c] + temp[(r+1)*col +c]) / 4; 
-            //if((arr[r*col + c] = avg) >= max)  counter++;
-            if((arr[r*col + c] = avg) >= max)  isValid = 0;
-            /*printf("result=%d, precision=%d, counter=%d\n", 
-                    result, precision, counter);*/
-        }
+        row_s = thrNum * n + 1;
+        row_e = arrLen - 2;
     }
-    return isValid;
+    else
+    {
+        row_s = thrNum * n + 1;
+        row_e = row_s + n - 1;
+    }
+
+    //printf("Thread %d will average row %d to %d\n", thrNum, row_s, row_e);
+    copyArr(temp, randArr, arrLen*arrLen);
+
+    /* 
+     * thread 0 will set isEnd to 1 at begining, broadcast once done
+     * the rest threads will wait for the signal
+     */
+    /* start loop to average */
+    while(!isEnd)
+    {
+        pthread_mutex_lock(&mutex);
+        waitCount++;
+        //printf("Thread %d: waitCount = %d\n", thrNum, waitCount);
+        if(waitCount == numThreads)
+        {
+            isEnd = 1;
+            waitCount = 0;
+            roundCount++;
+            pthread_cond_broadcast(&cv);
+            printf("Thread %d is broadcasting signals\n", thrNum);
+            printf("Round: %d starts now\n", roundCount);
+        }
+        else
+        {
+            printf("Thread %d is waiting for signal\n", thrNum);
+            pthread_cond_wait(&cv, &mutex);
+        }
+        pthread_mutex_unlock(&mutex);
+
+
+        for(int r = row_s; r <= row_e; r++)
+        {
+            for(int c = 1; c < col-1; c++)
+            {
+                int avg = (temp[r*col + c - 1] + temp[r*col + c + 1] + 
+                        temp[(r-1)*col + c] + temp[(r+1)*col +c]) / 4; 
+                if((randArr[r*col + c] = avg) >= precision)  isEnd = 0;
+            }
+        }
+    
+        //print2DArr(randArr,col);
+        /* Synchronization point */
+        printf("Thread %d is done...\n", thrNum);
+        int rc = pthread_barrier_wait(&barr);
+        if(rc != 0 && rc != PTHREAD_BARRIER_SERIAL_THREAD)
+        {
+            printf("Could not wait on barrier.\n");
+            exit(-1);
+        }
+    
+        copyArr(temp, randArr, arrLen*arrLen);
+
+        
+    }
+
+    
+    
+
+
+    /*
+    isEnd = 1;
+
+    */
 }
 
 /*
@@ -120,6 +241,4 @@ void print2DArr(int *arr, int len)
     }
 
 }
-
-
 
