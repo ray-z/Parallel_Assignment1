@@ -20,7 +20,7 @@ pthread_barrier_t barr;
 
 void print2DArr(int *arr, int len);
 void copyArr(int *dst, int *src, int len);
-void averaging(int thrNum);
+void averaging(int *inc);
 void averaging_noP(int row, int col);
 
 int main(int argc, char *argv[])
@@ -59,7 +59,9 @@ int main(int argc, char *argv[])
     pthread_t threads[numThreads];
     for(int i = 0; i < numThreads; ++i)
     {
-        if(pthread_create(&threads[i], NULL, (void*(*)(void*))averaging, &i))
+        int *inc = malloc(sizeof(i));
+        *inc = i;
+        if(pthread_create(&threads[i], NULL, (void*(*)(void*))averaging, inc))
         {
             printf("Could not create thread: %d\n", i);
             return -1;
@@ -100,8 +102,15 @@ int main(int argc, char *argv[])
 /*
  * averaging: replacing a value with the average of its four neighbours
  */
-void averaging(int thrNum)
+void averaging1(int *thrNum)
 {
+    printf("This is thread %d\n", *thrNum);
+    free(thrNum);
+}
+
+void averaging(int *inc)
+{
+    int thrNum = *inc;
     int temp[arrLen*arrLen];
     int row_s, row_e;
     int col = arrLen;
@@ -132,6 +141,7 @@ void averaging(int thrNum)
             }
         }
     
+        print2DArr(randArr,col);
         /* Synchronization point */
         printf("Thread %d is waiting...", thrNum);
         int rc = pthread_barrier_wait(&barr);
@@ -148,9 +158,6 @@ void averaging(int thrNum)
 
     
     
-
-
-
 
 
     /*
