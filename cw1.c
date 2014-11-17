@@ -12,10 +12,12 @@
 #define MAX_RAND 100   /* maximum random number */
 
 int isEnd = 0;
+int waitCount = 0;
 int arrLen, precision, numThreads;
 int *randArr;
 pthread_barrier_t barr;
-//pthread_mutex_t mutex;
+pthread_mutex_t mutex;
+pthread_cond_t cv;
 
 
 void print2DArr(int *arr, int len);
@@ -126,12 +128,33 @@ void averaging(int *inc)
         row_e = row_s + n - 1;
     }
 
+    printf("Thread %d will average row %d to %d\n", thrNum, row_s, row_e);
     copyArr(temp, randArr, arrLen*arrLen);
 
-    /* start loop to averaging */
+    /* 
+     * thread 0 will set isEnd to 1 at begining, broadcast once done
+     * the rest threads will wait for the signal
+     */
+    /* start loop to average */
     while(!isEnd)
     {
-        printf("Thread %d is averaging row %d to %d\n", thrNum, row_s, row_e);
+        pthread_mutex_lock(&mutex);
+        waitCount++;
+        if(waitCount == numThreads)
+        {
+            isEnd = 1;
+            waitCount = 0;
+            pthread_cond_broadcast(&cv);
+            printf("Thread %d is broadcasting signals\n", thrNum);
+        }
+        else
+        {
+            pthread_cond_wait(&cv, &mutex);
+            printf("Thread %d is waiting for signal\n", thrNum);
+        }
+        pthread_mutex_unlock(&mutex);
+
+
         for(int r = row_s; r <= row_e; r++)
         {
             for(int c = 1; c < col-1; c++)
