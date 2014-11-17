@@ -13,6 +13,7 @@
 
 int isEnd = 0;
 int waitCount = 0;
+int roundCount = 0;
 int arrLen, precision, numThreads;
 int *randArr;
 pthread_mutex_t mutex;
@@ -147,7 +148,7 @@ void averaging(int *inc)
         row_e = row_s + n - 1;
     }
 
-    printf("Thread %d will average row %d to %d\n", thrNum, row_s, row_e);
+    //printf("Thread %d will average row %d to %d\n", thrNum, row_s, row_e);
     copyArr(temp, randArr, arrLen*arrLen);
 
     /* 
@@ -159,18 +160,20 @@ void averaging(int *inc)
     {
         pthread_mutex_lock(&mutex);
         waitCount++;
-        printf("Thread %d: waitCount = %d\n", thrNum, waitCount);
+        //printf("Thread %d: waitCount = %d\n", thrNum, waitCount);
         if(waitCount == numThreads)
         {
             isEnd = 1;
             waitCount = 0;
+            roundCount++;
             pthread_cond_broadcast(&cv);
             printf("Thread %d is broadcasting signals\n", thrNum);
+            printf("Round: %d starts now\n", roundCount);
         }
         else
         {
-            pthread_cond_wait(&cv, &mutex);
             printf("Thread %d is waiting for signal\n", thrNum);
+            pthread_cond_wait(&cv, &mutex);
         }
         pthread_mutex_unlock(&mutex);
 
@@ -185,7 +188,7 @@ void averaging(int *inc)
             }
         }
     
-        print2DArr(randArr,col);
+        //print2DArr(randArr,col);
         /* Synchronization point */
         printf("Thread %d is done...\n", thrNum);
         int rc = pthread_barrier_wait(&barr);
