@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 
     for(int i = 0; i< numThreads; ++i)
     {
-        if(pthread_join[i], NULL)
+        if(pthread_join(threads[i], NULL))
         {
             printf("Could not join thread: %d\n", i);
             return -1;
