@@ -9,22 +9,22 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-#define MAX_RAND 100   /* maximum random number */
+#define RMAX 100.00   /* maximum random number */
 
 int isEnd = 0;
 int waitCount = 0;
 int roundCount = 0;
-int arrLen, precision, numThreads;
-int *randArr;
+int arrLen, numThreads;
+double precision;
+double *randArr;
 pthread_mutex_t mutex;
 pthread_cond_t cv;
 pthread_barrier_t barr;
 
-
-void print2DArr(int *arr, int len);
-void copyArr(int *dst, int *src, int len);
+double fRand(double max);
+void print2DArr(double *arr, int len);
+void copyArr(double *dst, double *src, int len);
 void averaging(int *inc);
-void averaging_noP(int row, int col);
 
 int main(int argc, char *argv[])
 {
@@ -37,16 +37,17 @@ int main(int argc, char *argv[])
      */
     //int arrLen, precision, numThreads;
     arrLen = (argv[1]) ? strtol(argv[1], NULL, 10) : 10;
-    precision = (argv[2]) ? strtol(argv[2], NULL, 10) : MAX_RAND;
+    precision = (argv[2]) ? atof(argv[2]) : RMAX;
+    printf("precision: %f\n", precision);
     numThreads = (argv[3]) ? strtol(argv[3], NULL, 10) : 1;
 
 
     /* init array */
-    randArr = (int *)malloc(arrLen*arrLen*sizeof(int));
+    randArr = (double *)malloc(arrLen*arrLen*sizeof(double));
     printf("Random generating a 2D array with dimension = %d:\n", arrLen);
     for(int i = 0; i < arrLen*arrLen; i++)
     {
-        randArr[i] = rand() % MAX_RAND;
+        randArr[i] = fRand(RMAX);
     }
     print2DArr(randArr, arrLen);
 
@@ -96,21 +97,8 @@ int main(int argc, char *argv[])
     }
 
 
-
-
-
-
-    
-//    /* do averaging */
-//    printf("Averaging...\n");
-//    printf("Result:\n");
-//    while(!isEnd)
-//    {
-//        averaging_noP(arrLen, arrLen);
-//        
-//    }
-//    print2DArr(randArr, arrLen);
-
+    printf("Result:\n");
+    print2DArr(randArr, arrLen);
 
     /* clean up */
     pthread_mutex_destroy(&mutex);
@@ -124,16 +112,10 @@ int main(int argc, char *argv[])
 /*
  * averaging: replacing a value with the average of its four neighbours
  */
-void averaging1(int *thrNum)
-{
-    printf("This is thread %d\n", *thrNum);
-    free(thrNum);
-}
-
 void averaging(int *inc)
 {
     int thrNum = *inc;
-    int temp[arrLen*arrLen];
+    double temp[arrLen*arrLen];
     int row_s, row_e;
     int col = arrLen;
     int n = (arrLen-2)/numThreads;
@@ -182,7 +164,7 @@ void averaging(int *inc)
         {
             for(int c = 1; c < col-1; c++)
             {
-                int avg = (temp[r*col + c - 1] + temp[r*col + c + 1] + 
+                double avg = (temp[r*col + c - 1] + temp[r*col + c + 1] + 
                         temp[(r-1)*col + c] + temp[(r+1)*col +c]) / 4; 
                 if((randArr[r*col + c] = avg) >= precision)  isEnd = 0;
             }
@@ -199,24 +181,13 @@ void averaging(int *inc)
         }
     
         copyArr(temp, randArr, arrLen*arrLen);
-
-        
     }
-
-    
-    
-
-
-    /*
-    isEnd = 1;
-
-    */
 }
 
 /*
  * copyArr: copy array from source to destination 
  */
-void copyArr(int *dst, int *src, int len)
+void copyArr(double *dst, double *src, int len)
 {
     while(len--)
     {
@@ -227,18 +198,27 @@ void copyArr(int *dst, int *src, int len)
 /*
  * print2DArr: print a readable 2D array
  */
-void print2DArr(int *arr, int len)
+void print2DArr(double *arr, int len)
 {
     for(int r = 0; r < len; r++)
     {
         for(int c = 0; c < len; c++)
         {
-            //randArr[r][c] = rand() % MAX_RAND;
+            //randArr[r][c] = rand() % RMAX;
             //printf("%3d", randArr[r][c]);
-            printf("%3d", arr[r*len + c]);
+            printf("%3f\t", arr[r*len + c]);
         }
         printf("\n");
     }
 
+}
+
+/*
+ * fRand: return random double with 2 decimal places
+ */
+double fRand(double max)
+{
+    double f = (double)rand() / RAND_MAX;
+    return f * max;
 }
 
