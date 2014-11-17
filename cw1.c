@@ -15,9 +15,9 @@ int isEnd = 0;
 int waitCount = 0;
 int arrLen, precision, numThreads;
 int *randArr;
-pthread_barrier_t barr;
 pthread_mutex_t mutex;
 pthread_cond_t cv;
+pthread_barrier_t barr;
 
 
 void print2DArr(int *arr, int len);
@@ -49,11 +49,25 @@ int main(int argc, char *argv[])
     }
     print2DArr(randArr, arrLen);
 
+    /* init mutex */
+    if(pthread_mutex_init(&mutex, NULL))
+    {
+        printf("Unable to initialize a mutex\n");
+        return -1;
+    }
+   
+    /* init condition variable */
+    if(pthread_cond_init (&cv, NULL))
+    {
+        printf("Unable to initialize a condition variable\n");
+        return -1;
+    }
+     
 
     /* init barrier */
     if(pthread_barrier_init(&barr, NULL, numThreads))
     {
-        printf("Could not create a barrier.\n");
+        printf("Unable to initialize a barrier.\n");
         return -1;
     }
 
@@ -97,6 +111,11 @@ int main(int argc, char *argv[])
 //    print2DArr(randArr, arrLen);
 
 
+    /* clean up */
+    pthread_mutex_destroy(&mutex);
+    pthread_cond_destroy(&cv);
+    pthread_barrier_destroy(&barr);
+    pthread_exit(NULL);
     free(randArr);
     return 0;
 }
@@ -140,6 +159,7 @@ void averaging(int *inc)
     {
         pthread_mutex_lock(&mutex);
         waitCount++;
+        printf("Thread %d: waitCount = %d\n", thrNum, waitCount);
         if(waitCount == numThreads)
         {
             isEnd = 1;
@@ -167,7 +187,7 @@ void averaging(int *inc)
     
         print2DArr(randArr,col);
         /* Synchronization point */
-        printf("Thread %d is waiting...\n", thrNum);
+        printf("Thread %d is done...\n", thrNum);
         int rc = pthread_barrier_wait(&barr);
         if(rc != 0 && rc != PTHREAD_BARRIER_SERIAL_THREAD)
         {
