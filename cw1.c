@@ -166,7 +166,8 @@ void averaging(int *inc)
             {
                 double avg = (temp[r*col + c - 1] + temp[r*col + c + 1] + 
                         temp[(r-1)*col + c] + temp[(r+1)*col +c]) / 4; 
-                if((randArr[r*col + c] = avg) >= precision)  isEnd = 0;
+                if(fabs(randArr[r*col + c] - avg) >= precision)  isEnd = 0;
+                randArr[r*col + c] = avg;
             }
         }
     
