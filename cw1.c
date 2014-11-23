@@ -9,12 +9,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <math.h>
 
-#define MAX_RAND 100   /* maximum random number */
+#define RMAX 100.00   /* maximum random number */
 
-void print2DArr(int *arr, int len);
-void copyArr(int *dst, int *src, int len);
-int averaging(int *arr, int *temp, int row, int col, int precision);
+double fRand(double max);
+void print2DArr(double *arr, int len);
+void copyArr(double *dst, double *src, int len);
+double averaging(double *arr, double *temp, int row, int col, double precision);
 
 int main(int argc, char *argv[])
 {
@@ -25,19 +27,20 @@ int main(int argc, char *argv[])
      * precision: max value of the random range, so the loop will run once only
      * number of threads: 1
      */
-    int arrLen, precision, numThreads;
+    int arrLen, numThreads;
+    double precision;
     arrLen = (argv[1]) ? strtol(argv[1], NULL, 10) : 10;
-    precision = (argv[2]) ? strtol(argv[2], NULL, 10) : MAX_RAND;
+    precision = (argv[2]) ? atof(argv[2]) : RMAX;
     numThreads = (argv[3]) ? strtol(argv[3], NULL, 10) : 1;
 
 
     /* init array */
-    int randArr[arrLen*arrLen];
-    int tempArr[arrLen*arrLen];
+    double randArr[arrLen*arrLen];
+    double tempArr[arrLen*arrLen];
     printf("Random generating a 2D array with dimension = %d:\n", arrLen);
     for(int i = 0; i < arrLen*arrLen; i++)
     {
-        randArr[i] = rand() % MAX_RAND;
+        randArr[i] = fRand(RMAX);
     }
     copyArr(tempArr, randArr, arrLen*arrLen);
     print2DArr(randArr, arrLen);
@@ -74,7 +77,7 @@ int main(int argc, char *argv[])
  * averaging: replacing a value with the average of its four neighbours
  * return: number of items whose value >= max after averaging
  */
-int averaging(int *arr, int *temp, int row, int col, int max)
+double averaging(double *arr, double *temp, int row, int col, double max)
 {
     //int counter = 0;
     int isValid = 1;
@@ -82,12 +85,10 @@ int averaging(int *arr, int *temp, int row, int col, int max)
     {
         for(int c = 1; c < col-1; c++)
         {
-            int avg = (temp[r*col + c - 1] + temp[r*col + c + 1] + 
+            double avg = (temp[r*col + c - 1] + temp[r*col + c + 1] + 
                     temp[(r-1)*col + c] + temp[(r+1)*col +c]) / 4; 
-            //if((arr[r*col + c] = avg) >= max)  counter++;
-            if((arr[r*col + c] = avg) >= max)  isValid = 0;
-            /*printf("result=%d, precision=%d, counter=%d\n", 
-                    result, precision, counter);*/
+            if(fabs(arr[r*col + c] - avg) >= max)  isValid = 0;
+            arr[r*col + c] = avg;
         }
     }
     return isValid;
@@ -96,7 +97,7 @@ int averaging(int *arr, int *temp, int row, int col, int max)
 /*
  * copyArr: copy array from source to destination 
  */
-void copyArr(int *dst, int *src, int len)
+void copyArr(double *dst, double *src, int len)
 {
     while(len--)
     {
@@ -107,7 +108,7 @@ void copyArr(int *dst, int *src, int len)
 /*
  * print2DArr: print a readable 2D array
  */
-void print2DArr(int *arr, int len)
+void print2DArr(double *arr, int len)
 {
     for(int r = 0; r < len; r++)
     {
@@ -115,12 +116,20 @@ void print2DArr(int *arr, int len)
         {
             //randArr[r][c] = rand() % MAX_RAND;
             //printf("%3d", randArr[r][c]);
-            printf("%3d", arr[r*len + c]);
+            printf("%f\t", arr[r*len + c]);
         }
         printf("\n");
     }
 
 }
 
+/*
+ * fRand: return random double with 2 decimal places
+ */
+double fRand(double max)
+{
+    double f = (double)rand() / RAND_MAX;
+    return f * max;
+}
 
 
