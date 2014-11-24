@@ -32,13 +32,12 @@ int main(int argc, char *argv[])
     /* get command-line arguments 
      *
      * default value:
-     * square array length: 10
-     * precision: max value of the random range, so the loop will run once only
-     * number of threads: 1
+     * square array length: default: 10
+     * precision: default: 1.0
+     * number of threads: default: 1
      */
-    //int arrLen, precision, numThreads;
     arrLen = (argv[1]) ? strtol(argv[1], NULL, 10) : 10;
-    precision = (argv[2]) ? atof(argv[2]) : RMAX;
+    precision = (argv[2]) ? atof(argv[2]) : 1.0;
     printf("precision: %f\n", precision);
     numThreads = (argv[3]) ? strtol(argv[3], NULL, 10) : 1;
 
@@ -131,7 +130,7 @@ void averaging(int *inc)
         row_e = row_s + n - 1;
     }
 
-    //printf("Thread %d will average row %d to %d\n", thrNum, row_s, row_e);
+    printf("Thread %d will average row %d to %d\n", thrNum, row_s, row_e);
     copyArr(temp, randArr, arrLen*arrLen);
 
     /* 
@@ -206,8 +205,6 @@ void print2DArr(double *arr, int len)
     {
         for(int c = 0; c < len; c++)
         {
-            //randArr[r][c] = rand() % RMAX;
-            //printf("%3d", randArr[r][c]);
             printf("%3f\t", arr[r*len + c]);
         }
         printf("\n");
